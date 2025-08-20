@@ -1,0 +1,48 @@
+identity:
+  author: nikola_milosevic
+  name: neo4j_query
+  label:
+    en_US: neo4j_query
+    zh_Hans: neo4j_query
+    pt_BR: neo4j_query
+  description:
+    en_US: Plugin to query Neo4j knowledge graph
+    zh_Hans: Plugin to query Neo4j knowledge graph
+    pt_BR: Plugin to query Neo4j knowledge graph
+  icon: icon.svg
+  tags:
+      - search
+tools:
+  - tools/neo4j_query.yaml
+extra:
+  python:
+    source: provider/neo4j_query.py
+
+credentials_for_provider:
+  AURA_URL:
+    type: text-input
+    required: true
+    label:
+      en_US: Aura URL
+    placeholder:
+      en_US: neo4j+s://xxxx.databases.neo4j.io
+    help:
+      en_US: Enter your Neo4j Aura connection URL
+  AURA_USERNAME:
+    type: text-input
+    required: true
+    label:
+      en_US: Aura Username
+    placeholder:
+      en_US: neo4j
+    help:
+      en_US: Enter your Neo4j Aura username
+  AURA_PASSWORD:
+    type: secret-input
+    required: true
+    label:
+      en_US: Aura Password
+    placeholder:
+      en_US: Enter your Neo4j Aura password
+    help:
+      en_US: Enter your Neo4j Aura password

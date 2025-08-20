@@ -1,0 +1,30 @@
+identity:
+  name: neo4j_query
+  author: nikola_milosevic
+  label:
+    en_US: neo4j_query
+    zh_Hans: neo4j_query
+    pt_BR: neo4j_query
+description:
+  human:
+    en_US: Plugin to query Neo4j knowledge graph
+    zh_Hans: Plugin to query Neo4j knowledge graph
+    pt_BR: Plugin to query Neo4j knowledge graph
+  llm: Plugin to query Neo4j knowledge graph
+parameters:
+  - name: query
+    type: string
+    required: true
+    label:
+      en_US: Query string
+      zh_Hans: 查询语句
+      pt_BR: Query string
+    human_description:
+      en_US: Plugin to query Neo4j knowledge graph
+      zh_Hans: Plugin to query Neo4j knowledge graph
+      pt_BR: Plugin to query Neo4j knowledge graph
+    llm_description: Plugin to query Neo4j knowledge graph
+    form: llm
+extra:
+  python:
+    source: tools/neo4j_query.py
