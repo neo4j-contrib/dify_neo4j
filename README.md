@@ -18,6 +18,9 @@
 
 If you are using plugin as a tool for agent, it is a good idea to pass to the LLM as a context the schema of your graph. With large graphs, natural language question to cypher may fail, and therefore it is also a good idea to ask LLM to first create a subgraph with just relevant nodes and edges to answer the question and than in the second step to generate Cypher and execute it on your KG. 
 
+## Plugin Privacy Protection
+This plugin sends query to the Aura instance, or URL deployment of Neo4j, and gets data from the graph in the instance. It is not sending or retaining any data about user anywhere apart from query and log-in details to the specified URL with Neo4j Aura
+
 ## Contributors
 * Nikola Milosevic
 
