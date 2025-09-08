@@ -6,6 +6,18 @@
 
 ## Description
 
+A secure Neo4j plugin for Dify that uses parameterized queries to prevent prompt injection attacks. The plugin provides structured parameters for common graph database operations instead of accepting raw Cypher queries.
+
+## Security Features
+
+- ✅ **Parameterized queries** - No direct execution of user input
+- ✅ **Input validation** - Identifiers validated against safe patterns  
+- ✅ **Value sanitization** - Property values escaped for safety
+- ✅ **Query whitelisting** - Only predefined query patterns allowed
+- ✅ **Resource protection** - Results limited to prevent abuse
+
+See [SECURITY.md](SECURITY.md) for detailed security documentation.
+
 ## Quick start guide
 
 1. Install Dify Plugin Development Scaffold (CLI) by following instruction from https://docs.dify.ai/plugin-dev-en/0211-getting-started-dify-tool#1-1-installing-the-dify-plugin-development-scaffold-cli
