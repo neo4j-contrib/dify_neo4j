@@ -6,6 +6,10 @@
 
 ## Description
 
+The Dify Neo4j Plugin (dify_neo4j) is an integration tool designed to connect the Dify.ai platform with Neo4j graph databases, enabling powerful graph-based data exploration and querying within Dify workflows. This plugin provides seamless access to Neo4j's query engine by allowing Dify agents or workflows to send Cypher queries directly to a specified Neo4j Aura instance or URL-based Neo4j deployment. With the plugin, users can harness the expressive power of graph queries for knowledge graph applications, recommendations, search, and data analytics, all orchestrated via Dify's no-code or agentic workflows.
+
+A key feature of the plugin is its support for integrating database schema context into LLM-powered flows, which is essential for generating accurate Cypher queries from natural language questions—especially on large knowledge graphs where context is critical. The recommended best practice is to provide the LLM with the schema and, for complex queries, first generate a subgraph relevant to the user's question before assembling and executing the final Cypher statement. The plugin respects data privacy by confining all transmitted information to the Neo4j instance, without sending user data to third parties except for query execution and required authentication with Neo4j services.
+
 ## Quick start guide
 
 1. Install Dify Plugin Development Scaffold (CLI) by following instruction from https://docs.dify.ai/plugin-dev-en/0211-getting-started-dify-tool#1-1-installing-the-dify-plugin-development-scaffold-cli
