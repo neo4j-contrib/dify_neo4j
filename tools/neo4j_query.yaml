@@ -20,10 +20,23 @@ parameters:
       zh_Hans: 查询语句
       pt_BR: Query string
     human_description:
-      en_US: Plugin to query Neo4j knowledge graph
-      zh_Hans: Plugin to query Neo4j knowledge graph
-      pt_BR: Plugin to query Neo4j knowledge graph
-    llm_description: Plugin to query Neo4j knowledge graph
+      en_US: Cypher query to execute against the Neo4j knowledge graph
+      zh_Hans: 针对Neo4j知识图谱执行的Cypher查询
+      pt_BR: Consulta Cypher para executar no grafo de conhecimento Neo4j
+    llm_description: Cypher query to execute against the Neo4j knowledge graph. Use parameterized queries with $parameter syntax for values.
+    form: llm
+  - name: parameters
+    type: object
+    required: false
+    label:
+      en_US: Query Parameters
+      zh_Hans: 查询参数
+      pt_BR: Parâmetros da Consulta
+    human_description:
+      en_US: Optional parameters for the Cypher query
+      zh_Hans: Cypher查询的可选参数
+      pt_BR: Parâmetros opcionais para a consulta Cypher
+    llm_description: Optional parameters to be used with parameterized Cypher queries (e.g., {name: "John", age: 30})
     form: llm
 extra:
   python:
