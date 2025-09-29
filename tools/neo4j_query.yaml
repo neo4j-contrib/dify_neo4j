@@ -12,106 +12,32 @@ description:
     pt_BR: Plugin to query Neo4j knowledge graph
   llm: Plugin to query Neo4j knowledge graph
 parameters:
-  - name: query_type
-    type: select
+  - name: query
+    type: string
     required: true
     label:
-      en_US: Query Type
-      zh_Hans: 查询类型
-      pt_BR: Tipo de Consulta
+      en_US: Query string
+      zh_Hans: 查询语句
+      pt_BR: Query string
     human_description:
-      en_US: Type of query to execute against Neo4j knowledge graph
-      zh_Hans: 针对Neo4j知识图谱执行的查询类型
-      pt_BR: Tipo de consulta para executar no grafo de conhecimento Neo4j
-    llm_description: Type of query to execute against Neo4j knowledge graph
-    form: form
-    options:
-      - value: find_nodes
-        label:
-          en_US: Find Nodes
-          zh_Hans: 查找节点
-          pt_BR: Encontrar Nós
-      - value: find_relationships
-        label:
-          en_US: Find Relationships
-          zh_Hans: 查找关系
-          pt_BR: Encontrar Relacionamentos
-      - value: path_query
-        label:
-          en_US: Path Query
-          zh_Hans: 路径查询
-          pt_BR: Consulta de Caminho
-      - value: neighbor_query
-        label:
-          en_US: Neighbor Query
-          zh_Hans: 邻居查询
-          pt_BR: Consulta de Vizinhos
-  - name: node_label
-    type: string
+      en_US: Cypher query to execute against the Neo4j knowledge graph
+      zh_Hans: 针对Neo4j知识图谱执行的Cypher查询
+      pt_BR: Consulta Cypher para executar no grafo de conhecimento Neo4j
+    llm_description: Cypher query to execute against the Neo4j knowledge graph. Use parameterized queries with $parameter syntax for values.
+    form: llm
+  - name: parameters
+    type: object
     required: false
     label:
-      en_US: Node Label
-      zh_Hans: 节点标签
-      pt_BR: Rótulo do Nó
+      en_US: Query Parameters
+      zh_Hans: 查询参数
+      pt_BR: Parâmetros da Consulta
     human_description:
-      en_US: Label of the nodes to search for
-      zh_Hans: 要搜索的节点标签
-      pt_BR: Rótulo dos nós a serem pesquisados
-    llm_description: Label of the nodes to search for
+      en_US: Optional parameters for the Cypher query
+      zh_Hans: Cypher查询的可选参数
+      pt_BR: Parâmetros opcionais para a consulta Cypher
+    llm_description: Optional parameters to be used with parameterized Cypher queries (e.g., {name: "John", age: 30})
     form: llm
-  - name: property_name
-    type: string
-    required: false
-    label:
-      en_US: Property Name
-      zh_Hans: 属性名称
-      pt_BR: Nome da Propriedade
-    human_description:
-      en_US: Name of the property to filter by
-      zh_Hans: 用于过滤的属性名称
-      pt_BR: Nome da propriedade para filtrar
-    llm_description: Name of the property to filter by
-    form: llm
-  - name: property_value
-    type: string
-    required: false
-    label:
-      en_US: Property Value
-      zh_Hans: 属性值
-      pt_BR: Valor da Propriedade
-    human_description:
-      en_US: Value of the property to match
-      zh_Hans: 要匹配的属性值
-      pt_BR: Valor da propriedade para corresponder
-    llm_description: Value of the property to match
-    form: llm
-  - name: relationship_type
-    type: string
-    required: false
-    label:
-      en_US: Relationship Type
-      zh_Hans: 关系类型
-      pt_BR: Tipo de Relacionamento
-    human_description:
-      en_US: Type of relationship to search for
-      zh_Hans: 要搜索的关系类型
-      pt_BR: Tipo de relacionamento a ser pesquisado
-    llm_description: Type of relationship to search for
-    form: llm
-  - name: limit
-    type: number
-    required: false
-    label:
-      en_US: Result Limit
-      zh_Hans: 结果限制
-      pt_BR: Limite de Resultados
-    human_description:
-      en_US: Maximum number of results to return (default: 100, max: 1000)
-      zh_Hans: 返回结果的最大数量（默认：100，最大：1000）
-      pt_BR: Número máximo de resultados a serem retornados (padrão: 100, máx: 1000)
-    llm_description: Maximum number of results to return
-    form: llm
-    default: 100
 extra:
   python:
     source: tools/neo4j_query.py

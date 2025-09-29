@@ -2,109 +2,95 @@
 
 ## Overview
 
-This plugin has been enhanced with parameterized queries to prevent prompt injection attacks. The implementation replaces direct query execution with secure, structured parameters and predefined query templates.
+This plugin implements security measures to prevent Cypher injection attacks while maintaining a simple, familiar interface.
+
+## Security Approach
+
+The implementation uses **automatic security validation** with the original query interface, providing the best of both worlds: simplicity and security.
+
+```python
+# ✅ SECURE - Simple interface with automatic protection
+{
+  "query": "MATCH (n:Person {name: $name}) RETURN n",
+  "parameters": {"name": "John"}
+}
+```
 
 ## Security Features
 
-### 1. Parameterized Queries
+### 1. **Dangerous Operation Blocking**
 
-Instead of accepting raw Cypher queries, the tool now uses predefined templates with proper Neo4j parameterization:
+The following operations are automatically blocked:
+- `DETACH DELETE` - Prevents data deletion
+- `DELETE` - Prevents unauthorized deletions  
+- `DROP` - Prevents schema/database deletion
+- `CREATE DATABASE/USER/ROLE` - Prevents administrative operations
+- `CALL db.*` / `CALL dbms.*` - Prevents system procedure calls
 
-```python
-# ❌ VULNERABLE (before)
-session.run(user_query)  # Direct execution of user input
+### 2. **Automatic LIMIT Protection**
 
-# ✅ SECURE (after)  
-session.run(query_template, sanitized_params)  # Parameterized execution
-```
+- Automatically adds `LIMIT 1000` to queries without limits
+- Caps existing limits to maximum 1000 results
+- Prevents resource exhaustion attacks
 
-### 2. Input Validation
+### 3. **Query Length Validation**
 
-All identifiers (labels, property names, relationship types) are validated:
+- Maximum query length: 2000 characters
+- Prevents buffer overflow attacks
 
-- **Pattern**: `^[a-zA-Z_][a-zA-Z0-9_]*$`
-- **Prevents**: SQL-style injections, special characters, command injection
+### 4. **Built-in Parameterization Support**
 
-```python
-# ✅ Valid identifiers
-"Person", "User123", "_internal", "valid_label"
-
-# ❌ Invalid identifiers (rejected)
-"Person'; DROP ALL;--", "User-Name", "123Invalid", "User.Property"
-```
-
-### 3. Value Sanitization
-
-Property values are sanitized to escape dangerous characters:
+Use Neo4j's standard parameterization syntax:
 
 ```python
-# Input: "John'; DELETE n;--"
-# Output: "John\\'; DELETE n;--"
+# ✅ SECURE - Parameters are safely handled
+{
+  "query": "MATCH (n:Person {name: $name, age: $age}) RETURN n",
+  "parameters": {"name": "John", "age": 30}
+}
 ```
-
-### 4. Query Type Restrictions
-
-Only predefined query types are allowed:
-- `find_nodes` - Find nodes by label and/or properties
-- `find_relationships` - Find relationships between nodes
-- `path_query` - Find paths between nodes
-- `neighbor_query` - Find neighboring nodes
 
 ## Usage Examples
 
-### Find Nodes
+### Simple Node Search
 
-```yaml
-query_type: find_nodes
-node_label: Person
-property_name: name
-property_value: John
-limit: 10
+```python
+{
+  "query": "MATCH (n:Person {name: $name}) RETURN n",
+  "parameters": {"name": "Alice"}
+}
 ```
 
-Generates: `MATCH (n:Person) WHERE n.name = $property_value RETURN n LIMIT $limit`
+### Relationship Queries
 
-### Find Relationships
-
-```yaml
-query_type: find_relationships  
-node_label: Person
-relationship_type: KNOWS
-limit: 20
+```python
+{
+  "query": "MATCH (a:Person)-[r:KNOWS]->(b:Person) WHERE a.name = $name RETURN r, b",
+  "parameters": {"name": "Bob"}
+}
 ```
 
-Generates: `MATCH (a)-[r:KNOWS]->(b) WHERE a:Person RETURN a, r, b LIMIT $limit`
+### Path Queries
 
-### Path Query
-
-```yaml
-query_type: path_query
-node_label: Company
-property_name: industry
-property_value: Tech
-limit: 5
+```python
+{
+  "query": "MATCH p = (start:Person {id: $startId})-[*1..3]-(end) RETURN p",
+  "parameters": {"startId": "123"}
+}
 ```
 
-Generates: `MATCH p = (start:Company {industry: $property_value})-[*1..3]-(end) RETURN p LIMIT $limit`
+### Complex Filtering
 
-## Migration Guide
-
-### Before (Vulnerable)
-
-```yaml
-parameters:
-  - name: query
-    type: string
-    form: llm
+```python
+{
+  "query": "MATCH (n:Person) WHERE n.age > $minAge AND n.city = $city RETURN n",
+  "parameters": {"minAge": 25, "city": "New York"}
+}
 ```
 
-Tool usage:
-```cypher
-MATCH (n:Person {name: "John"}) RETURN n
-```
+## Migration from Complex Implementation
 
-### After (Secure)
-
+**Before (Complex):**
 ```yaml
 parameters:
   - name: query_type
@@ -112,47 +98,60 @@ parameters:
     options: [find_nodes, find_relationships, path_query, neighbor_query]
   - name: node_label
     type: string
-  - name: property_name  
+  - name: property_name
     type: string
   - name: property_value
     type: string
+  - name: relationship_type
+    type: string
   - name: limit
     type: number
-    default: 100
 ```
 
-Tool usage:
+**After (Simplified):**
 ```yaml
-query_type: find_nodes
-node_label: Person
-property_name: name
-property_value: John
-limit: 10
+parameters:
+  - name: query
+    type: string
+  - name: parameters
+    type: object
+```
+
+## What's Blocked vs Allowed
+
+### ❌ Blocked (Dangerous Operations)
+
+```python
+"MATCH (n) DETACH DELETE n"           # Data deletion
+"DROP DATABASE mydb"                  # Schema deletion
+"CALL db.stats()"                     # System procedures
+"CREATE USER admin"                   # Administrative operations
+"DELETE n WHERE n.id = 1"            # Unparameterized deletion
+```
+
+### ✅ Allowed (Safe Operations)
+
+```python
+"MATCH (n:Person) RETURN n"                               # Simple queries
+"MATCH (a)-[r]->(b) RETURN a, r, b"                      # Relationship queries
+"MATCH (n:Person {name: $name}) RETURN n"                # Parameterized queries
+"MATCH (n) WHERE n.age > $age RETURN n LIMIT 100"        # Filtered queries
 ```
 
 ## Security Benefits
 
-1. **Prevents Prompt Injection**: No direct query execution
-2. **Input Validation**: All identifiers validated against safe patterns
-3. **Value Sanitization**: Property values escaped for safety
-4. **Query Whitelisting**: Only predefined query patterns allowed
-5. **Resource Protection**: Result limits prevent resource exhaustion
-6. **Parameter Separation**: Query structure separated from user data
+1. **Familiar Interface**: Keep using standard Cypher syntax
+2. **Automatic Protection**: Security is transparent to users
+3. **Parameterization Support**: Full Neo4j parameter support
+4. **Resource Protection**: Automatic LIMIT enforcement
+5. **Operation Filtering**: Dangerous operations blocked
+6. **Length Limits**: Prevents malformed queries
 
-## Testing
+## Best Practices
 
-The implementation includes comprehensive security testing:
+1. **Always use parameters** for user values: `{name: $name}` not `{name: 'user_input'}`
+2. **Keep queries focused**: Single-purpose queries are more secure
+3. **Use appropriate limits**: Specify reasonable LIMIT values
+4. **Test with parameters**: Verify parameterized queries work as expected
 
-- ✅ Identifier validation prevents injection attempts
-- ✅ Property value sanitization handles malicious input  
-- ✅ Query building works for all supported patterns
-- ✅ Integration testing confirms end-to-end security
-- ✅ Edge case testing covers various attack scenarios
-
-## Limitations
-
-- Only supports predefined query patterns
-- Complex custom queries not supported
-- May require multiple tool calls for complex operations
-
-For advanced use cases requiring custom queries, consider using the tool multiple times with different parameters to build up the required data.
+This simplified approach provides strong security while maintaining the familiar Cypher query interface that users expect.
