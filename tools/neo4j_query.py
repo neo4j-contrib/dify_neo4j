@@ -126,7 +126,24 @@ class Neo4jQueryTool(Tool):
                     if not isinstance(safe_params, dict):
                         raise ValueError("Parameters must be a JSON object")
                 except json.JSONDecodeError as e:
-                    raise ValueError(f"Invalid JSON in parameters: {str(e)}")
+                    # Try to fix common issue: unquoted string values from variable substitution
+                    # Example: {"name":cardiomyopathy} -> {"name":"cardiomyopathy"}
+                    try:
+                        import re
+                        # Pattern to find unquoted values after colons
+                        # Matches :value} or :value, where value doesn't start with quote, bracket, or brace
+                        fixed_params = re.sub(r':([a-zA-Z0-9_][a-zA-Z0-9_\s\-\.]*)([\},])', r':"\1"\2', parameters_str)
+                        safe_params = json.loads(fixed_params)
+                        if not isinstance(safe_params, dict):
+                            raise ValueError("Parameters must be a JSON object")
+                        yield self.create_text_message(f"Note: Auto-corrected parameter format from '{parameters_str}' to '{fixed_params}'")
+                    except:
+                        raise ValueError(
+                            f"Invalid JSON in parameters: {str(e)}\n"
+                            f"Received: {parameters_str}\n"
+                            f"Tip: When using variables, ensure proper JSON format. "
+                            f"Example: {{\"name\":\"{{{{#llm.text#}}}}\"}}"
+                        )
             
             # Get or create the driver (reused across queries)
             driver = self._get_or_create_driver(url, username, password)
@@ -150,10 +167,16 @@ class Neo4jQueryTool(Tool):
                 # This stops iteration after max_records without loading all data
                 records = [record.data() for record in itertools.islice(result, max_records)]
 
+            # Send JSON message with full results
             yield self.create_json_message({"results": records})
             
+            # Send text message with formatted summary
             if records:
-                yield self.create_text_message(f"Found {len(records)} results from Neo4j query.")
+                # Create a readable text summary
+                text_summary = f"Found {len(records)} results from Neo4j query.\n\n"
+                text_summary += "Results (JSON):\n"
+                text_summary += json.dumps(records, indent=2, ensure_ascii=False)
+                yield self.create_text_message(text_summary)
             else:
                 yield self.create_text_message("No results found for the specified query.")
                 

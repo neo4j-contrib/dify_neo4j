@@ -26,6 +26,24 @@ class Neo4jQueryProvider(ToolProvider):
                 f"Missing or empty credentials: {missing_str}. Please provide all required Neo4j connection details."
             )
         
+        # Validate URL scheme
+        supported_schemes = ['bolt://', 'bolt+ssc://', 'bolt+s://', 'neo4j://', 'neo4j+ssc://', 'neo4j+s://']
+        if not any(url.startswith(scheme) for scheme in supported_schemes):
+            # Check for common typo
+            if url.startswith('neo4+s://'):
+                raise ToolProviderCredentialValidationError(
+                    f"Invalid URL scheme. You entered 'neo4+s://' but it should be 'neo4j+s://' (with a 'j').\n"
+                    f"Your URL: {url}\n"
+                    f"Corrected URL should be: {url.replace('neo4+s://', 'neo4j+s://')}"
+                )
+            raise ToolProviderCredentialValidationError(
+                f"Invalid URL scheme in: {url}\n"
+                f"Supported schemes: bolt://, bolt+s://, bolt+ssc://, neo4j://, neo4j+s://, neo4j+ssc://\n"
+                f"Examples:\n"
+                f"  - Neo4j Aura: neo4j+s://xxxxx.databases.neo4j.io\n"
+                f"  - Local: bolt://localhost:7687 or neo4j://localhost:7687"
+            )
+        
         try:
             # Use a timeout for connection verification
             # Set max_connection_lifetime to handle Aura connections better
