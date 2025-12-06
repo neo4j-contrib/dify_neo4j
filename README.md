@@ -1,6 +1,6 @@
 # Neo4j Query Plugin for Dify
 
-**Version:** 1.0.0
+**Version:** 0.1.0
 
 **Type:** Tool
 
@@ -29,7 +29,7 @@ The Neo4j Query Plugin is a secure and efficient integration tool that connects 
 - **Both cloud and local** - Works with Neo4j Aura and self-hosted instances
 - **Parameterized queries** - Safe value substitution in Cypher queries
 
-## Latest Updates (v1.0.0)
+## Latest Updates (v0.1.0)
 
 - ✨ **Write query protection** with explicit checkbox and warnings
 - ✨ **Preflight EXPLAIN checks** for syntax validation and query type detection
