@@ -1,17 +1,17 @@
-version: 0.0.1
+version: 1.0.0
 type: plugin
 author: nikola_milosevic
 name: neo4j_query
 label:
-  en_US: neo4j_query
-  ja_JP: neo4j_query
-  zh_Hans: neo4j_query
-  pt_BR: neo4j_query
+  en_US: Neo4j Query Tool
+  ja_JP: Neo4j クエリツール
+  zh_Hans: Neo4j 查询工具
+  pt_BR: Ferramenta de Consulta Neo4j
 description:
-  en_US: Plugin to query Neo4j knowledge graph
-  ja_JP: Plugin to query Neo4j knowledge graph
-  zh_Hans: Plugin to query Neo4j knowledge graph
-  pt_BR: Plugin to query Neo4j knowledge graph
+  en_US: Secure Neo4j graph database integration with parameterized queries, write protection, and multi-database support. Query knowledge graphs with Cypher from Dify workflows and AI agents.
+  ja_JP: パラメータ化されたクエリ、書き込み保護、マルチデータベースサポートを備えた安全なNeo4jグラフデータベース統合。DifyワークフローとAIエージェントからCypherでナレッジグラフをクエリします。
+  zh_Hans: 安全的Neo4j图数据库集成，支持参数化查询、写保护和多数据库支持。通过Dify工作流和AI代理使用Cypher查询知识图谱。
+  pt_BR: Integração segura de banco de dados de grafo Neo4j com consultas parametrizadas, proteção de escrita e suporte a múltiplos bancos de dados. Consulte grafos de conhecimento com Cypher de fluxos de trabalho Dify e agentes de IA.
 icon: icon.svg
 resource:
   memory: 268435456
@@ -31,7 +31,7 @@ plugins:
   tools:
     - provider/neo4j_query.yaml
 meta:
-  version: 0.0.1
+  version: 1.0.0
   arch:
     - amd64
     - arm64
@@ -40,6 +40,6 @@ meta:
     version: "3.12"
     entrypoint: main
   minimum_dify_version: null
-created_at: 2025-06-12T09:52:08.161644+02:00
+created_at: 2024-12-06T09:52:08.161644+02:00
 privacy: PRIVACY.md
 verified: false

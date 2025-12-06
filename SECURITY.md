@@ -1,15 +1,21 @@
-# Neo4j Query Security
+# Neo4j Query Plugin - Security
 
 ## Overview
 
-This plugin implements security measures to prevent Cypher injection attacks while maintaining a simple, familiar interface.
+This plugin implements comprehensive security measures to prevent Cypher injection attacks, unauthorized database modifications, and resource exhaustion while maintaining a simple and familiar interface.
 
-## Security Approach
+## Security Architecture
 
-The implementation uses **automatic security validation** with the original query interface, providing the best of both worlds: simplicity and security.
+The plugin uses a **multi-layered security approach**:
+
+1. **Preflight Validation** - EXPLAIN-based query checks before execution
+2. **Query Type Detection** - Automatic read/write classification
+3. **Write Protection** - Explicit user consent required for modifications
+4. **Resource Limits** - Configurable record and query size limits
+5. **Parameterization** - Safe value substitution in queries
 
 ```python
-# ✅ SECURE - Simple interface with automatic protection
+# ✅ SECURE - Parameterized query with validation
 {
   "query": "MATCH (n:Person {name: $name}) RETURN n",
   "parameters": {"name": "John"}
@@ -18,29 +24,61 @@ The implementation uses **automatic security validation** with the original quer
 
 ## Security Features
 
-### 1. **Dangerous Operation Blocking**
+### 1. **Preflight EXPLAIN Checks**
 
-The following operations are automatically blocked:
-- `DETACH DELETE` - Prevents data deletion
-- `DELETE` - Prevents unauthorized deletions  
-- `DROP` - Prevents schema/database deletion
-- `CREATE DATABASE/USER/ROLE` - Prevents administrative operations
-- `CALL db.*` / `CALL dbms.*` - Prevents system procedure calls
+Before executing any query, the plugin runs `EXPLAIN` to:
+- **Validate syntax** - Catch errors before execution
+- **Detect query type** - Identify read ('r'), write ('w'), read-write ('rw'), or schema ('s') queries
+- **Enforce permissions** - Block write queries unless explicitly allowed
 
-### 2. **Automatic LIMIT Protection**
+```python
+# Plugin automatically runs: EXPLAIN <your_query>
+# Checks summary.query_type before actual execution
+```
 
-- Automatically adds `LIMIT 1000` to queries without limits
-- Caps existing limits to maximum 1000 results
-- Prevents resource exhaustion attacks
+### 2. **Write Query Protection**
 
-### 3. **Query Length Validation**
+**Default Behavior (Secure):**
+- ❌ `CREATE` operations blocked
+- ❌ `DELETE` / `DETACH DELETE` blocked
+- ❌ `SET` / `REMOVE` operations blocked
+- ❌ `MERGE` operations blocked
+- ✅ `MATCH` and `RETURN` allowed
+- ✅ Schema queries (`SHOW`, `CREATE INDEX`) allowed
 
-- Maximum query length: 2000 characters
+**When `allow_write_queries` is enabled:**
+- ⚠️ User explicitly opts in via checkbox
+- ⚠️ Warning messages displayed
+- ✅ All write operations permitted
+- ❌ Administrative operations still blocked
+
+**Always Blocked (Even with Write Permission):**
+- `CREATE DATABASE` / `DROP DATABASE`
+- `CREATE USER` / `DROP USER`
+- `CREATE ROLE` / `DROP ROLE`
+- `SET PASSWORD`
+- `CALL dbms.*` system procedures
+
+### 3. **Resource Limits**
+
+**Query Length:**
+- Maximum: 2000 characters
 - Prevents buffer overflow attacks
 
-### 4. **Built-in Parameterization Support**
+**Record Limits:**
+- Default: 1000 records per query
+- Configurable via `max_records` parameter
+- Uses efficient streaming with `fetch_size`
+- Prevents memory exhaustion
 
-Use Neo4j's standard parameterization syntax:
+**Connection Management:**
+- Singleton driver pattern per tool instance
+- Automatic connection pooling
+- Proper cleanup on destruction
+
+### 4. **Parameterized Queries**
+
+Always use Neo4j's standard parameterization syntax:
 
 ```python
 # ✅ SECURE - Parameters are safely handled
@@ -88,34 +126,113 @@ Use Neo4j's standard parameterization syntax:
 }
 ```
 
-## Migration from Complex Implementation
+### Write Operations (Requires Permission)
 
-**Before (Complex):**
-```yaml
-parameters:
-  - name: query_type
-    type: select
-    options: [find_nodes, find_relationships, path_query, neighbor_query]
-  - name: node_label
-    type: string
-  - name: property_name
-    type: string
-  - name: property_value
-    type: string
-  - name: relationship_type
-    type: string
-  - name: limit
-    type: number
+```python
+{
+  "query": "CREATE (p:Person {name: $name, age: $age}) RETURN p",
+  "parameters": {"name": "Charlie", "age": 35},
+  "allow_write_queries": true
+}
 ```
 
-**After (Simplified):**
-```yaml
-parameters:
-  - name: query
-    type: string
-  - name: parameters
-    type: object
+```python
+{
+  "query": "MATCH (p:Person {id: $id}) SET p.status = $status RETURN p",
+  "parameters": {"id": "123", "status": "active"},
+  "allow_write_queries": true
+}
 ```
+
+## Error Messages
+
+The plugin provides specific error messages for different security violations:
+
+### Write Query Blocked
+```
+Write queries are not allowed. Query type: 'w'. 
+Enable 'Allow Write Queries' to execute write operations.
+```
+
+### Syntax Error
+```
+Query syntax error: Neo.ClientError.Statement.SyntaxError
+```
+
+### Query Too Long
+```
+Query too long (max 2000 characters)
+```
+
+## Validation Flow
+
+```
+1. Basic Validation
+   ├─ Check query is non-empty string
+   └─ Check query length ≤ 2000 chars
+
+2. Preflight Check
+   ├─ Execute: EXPLAIN <query>
+   ├─ Check for syntax errors
+   ├─ Get query_type from summary
+   └─ Validate: if write_disabled && type not in ['r','s'] → REJECT
+
+3. Query Execution
+   ├─ Execute query with parameters
+   ├─ Stream results with fetch_size
+   └─ Limit to max_records
+```
+
+## Best Practices
+
+### 1. Always Use Parameters
+```python
+# ✅ GOOD
+{"query": "MATCH (n:Person {name: $name}) RETURN n", "parameters": {"name": user_input}}
+
+# ❌ BAD - Vulnerable to injection
+{"query": f"MATCH (n:Person {{name: '{user_input}'}}) RETURN n"}
+```
+
+### 2. Enable Write Queries Sparingly
+- Keep disabled by default
+- Enable only for trusted operations
+- Review queries before execution
+- Use in controlled workflows
+
+### 3. Limit Result Sets
+```python
+# Use max_records parameter
+{
+  "query": "MATCH (n:Person) RETURN n",
+  "max_records": 100  # Limit to 100 records
+}
+```
+
+### 4. Multi-Database Isolation
+```python
+# Target specific databases
+{
+  "query": "MATCH (n:Node) RETURN n",
+  "database": "production"  # Isolate to specific database
+}
+```
+
+## Credential Security
+
+- **Storage**: Credentials encrypted in Dify platform
+- **Transmission**: HTTPS/TLS for all connections
+- **Validation**: Connection tested during credential setup
+- **Timeout**: 10-second connection timeout prevents hanging
+- **No Logging**: Credentials never logged or exposed
+
+## Reporting Security Issues
+
+If you discover a security vulnerability:
+1. **Do NOT** open a public issue
+2. Email: security@neo4j.com
+3. Include detailed reproduction steps
+4. Allow time for patching before disclosure
 
 ## What's Blocked vs Allowed
 

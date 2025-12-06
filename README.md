@@ -1,42 +1,175 @@
-# neo4j_query Dify Plugin
+# Neo4j Query Plugin for Dify
 
-**Version:** 0.0.1
+**Version:** 1.0.0
 
-**Type:** tool
+**Type:** Tool
 
-## Description
+## Overview
 
+The Neo4j Query Plugin is a secure and efficient integration tool that connects Dify.ai with Neo4j graph databases. It enables powerful graph-based data exploration, querying, and manipulation within Dify workflows and AI agents. The plugin supports both Neo4j Aura cloud instances and locally hosted Neo4j deployments.
 
-The Dify Neo4j Plugin (dify_neo4j) is an integration tool designed to connect the Dify.ai platform with Neo4j graph databases, enabling powerful graph-based data exploration and querying within Dify workflows. This plugin provides seamless access to Neo4j's query engine by allowing Dify agents or workflows to send Cypher queries directly to a specified Neo4j Aura instance or URL-based Neo4j deployment. With the plugin, users can harness the expressive power of graph queries for knowledge graph applications, recommendations, search, and data analytics, all orchestrated via Dify's no-code or agentic workflows.
+## Key Features
 
-A key feature of the plugin is its support for integrating database schema context into LLM-powered flows, which is essential for generating accurate Cypher queries from natural language questions—especially on large knowledge graphs where context is critical. The recommended best practice is to provide the LLM with the schema and, for complex queries, first generate a subgraph relevant to the user's question before assembling and executing the final Cypher statement. The plugin respects data privacy by confining all transmitted information to the Neo4j instance, without sending user data to third parties except for query execution and required authentication with Neo4j services.
+### 🔒 Security
+- **Parameterized queries** - Prevents Cypher injection attacks
+- **Preflight validation** - EXPLAIN-based query validation before execution
+- **Write query protection** - Optional write operations with explicit user consent
+- **Query length limits** - Maximum 2000 characters per query
+- **Resource limits** - Configurable maximum record limits (default: 1000)
 
-A secure Neo4j plugin for Dify that uses parameterized queries to prevent prompt injection attacks. The plugin provides structured parameters for common graph database operations instead of accepting raw Cypher queries.
+### ⚡ Performance
+- **Singleton driver pattern** - Efficient connection reuse
+- **Streaming results** - Memory-efficient record fetching with configurable fetch_size
+- **Connection pooling** - Built-in Neo4j driver connection management
+- **User agent tracking** - Identifies plugin traffic in Neo4j logs
 
-## Security Features
+### 🎯 Flexibility
+- **Multi-database support** - Query different databases within the same instance
+- **Read/Write control** - Granular control over query capabilities
+- **Both cloud and local** - Works with Neo4j Aura and self-hosted instances
+- **Parameterized queries** - Safe value substitution in Cypher queries
 
-- ✅ **Parameterized queries** - No direct execution of user input
-- ✅ **Input validation** - Identifiers validated against safe patterns  
-- ✅ **Value sanitization** - Property values escaped for safety
-- ✅ **Query whitelisting** - Only predefined query patterns allowed
-- ✅ **Resource protection** - Results limited to prevent abuse
+## Latest Updates (v1.0.0)
 
-See [SECURITY.md](SECURITY.md) for detailed security documentation.
+- ✨ **Write query protection** with explicit checkbox and warnings
+- ✨ **Preflight EXPLAIN checks** for syntax validation and query type detection
+- ✨ **Database parameter** for multi-database support
+- ✨ **Configurable record limits** with efficient streaming
+- ✨ **User agent identification** for tracking plugin usage
+- ✨ **Improved error messages** with detailed validation feedback
+- ✨ **Thread-safe driver management** with proper cleanup
+- ✨ **Better credential validation** with specific error messages
+- 🔧 Renamed credentials from "Aura" to "Neo4j" for clarity
+- 🔧 Optimized memory usage with itertools.islice
+- 🔧 Enhanced parameter documentation with examples
 
-## Quick start guide
+## Installation
 
-1. Install Dify Plugin Development Scaffold (CLI) by following instruction from https://docs.dify.ai/plugin-dev-en/0211-getting-started-dify-tool#1-1-installing-the-dify-plugin-development-scaffold-cli
-2. Package plugin by going to the parent folder of dify_neo4j and run command:
-`./dify plugin package dify_neo4j`
-3. Upload plugin to your Dify instance (in plugins tab)
-4. Create workflows using the plugin as a node or as a tool for agent
+### Prerequisites
+- Dify instance (self-hosted or cloud)
+- Neo4j database (Aura or self-hosted)
+- Dify Plugin Development Scaffold (CLI)
 
-## Recommendation for use
+### Steps
 
-If you are using plugin as a tool for agent, it is a good idea to pass to the LLM as a context the schema of your graph. With large graphs, natural language question to cypher may fail, and therefore it is also a good idea to ask LLM to first create a subgraph with just relevant nodes and edges to answer the question and than in the second step to generate Cypher and execute it on your KG. 
+1. **Install Dify Plugin CLI**
+   ```bash
+   # Follow instructions from Dify documentation
+   # https://docs.dify.ai/plugin-dev-en/0211-getting-started-dify-tool
+   ```
 
-## Plugin Privacy Protection
-This plugin sends query to the Aura instance, or URL deployment of Neo4j, and gets data from the graph in the instance. It is not sending or retaining any data about user anywhere apart from query and log-in details to the specified URL with Neo4j Aura
+2. **Package the Plugin**
+   ```bash
+   # Navigate to parent folder of dify_neo4j
+   ./dify plugin package dify_neo4j
+   ```
+
+3. **Upload to Dify**
+   - Go to your Dify instance
+   - Navigate to Plugins tab
+   - Upload the packaged plugin
+
+4. **Configure Credentials**
+   - **Neo4j URL**: Your connection URL (e.g., `neo4j+s://xxxxx.databases.neo4j.io` or `bolt://localhost:7687`)
+   - **Neo4j Username**: Your database username
+   - **Neo4j Password**: Your database password
+
+5. **Use in Workflows**
+   - Add as a tool node in workflows
+   - Configure as a tool for AI agents
+
+## Usage
+
+### Basic Query
+```json
+{
+  "query": "MATCH (p:Person) RETURN p.name, p.age LIMIT 10",
+  "parameters": {}
+}
+```
+
+### Parameterized Query
+```json
+{
+  "query": "MATCH (p:Person {name: $name}) RETURN p",
+  "parameters": {"name": "Alice"}
+}
+```
+
+### Multi-Database Query
+```json
+{
+  "query": "MATCH (n:Node) RETURN n LIMIT 5",
+  "database": "movies"
+}
+```
+
+### Write Query (with permission)
+```json
+{
+  "query": "CREATE (p:Person {name: $name, age: $age}) RETURN p",
+  "parameters": {"name": "Bob", "age": 30},
+  "allow_write_queries": true
+}
+```
+
+### Configuration Options
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| query | string | Yes | - | Cypher query to execute |
+| parameters | object | No | {} | Query parameters (JSON object) |
+| database | string | No | null | Target database name |
+| max_records | number | No | 1000 | Maximum records to return |
+| allow_write_queries | boolean | No | false | Enable write operations |
+
+## Best Practices
+
+### 1. Schema Context for LLMs
+When using the plugin with AI agents, provide the graph schema as context:
+```
+Provide your LLM with:
+- Node labels and their properties
+- Relationship types
+- Constraints and indexes
+```
+
+### 2. Two-Step Query Approach
+For complex queries on large graphs:
+1. **First query**: Extract relevant subgraph
+2. **Second query**: Execute detailed analysis on the subgraph
+
+### 3. Always Use Parameters
+```cypher
+# ✅ GOOD - Parameterized
+MATCH (p:Person {name: $name}) RETURN p
+
+# ❌ BAD - String concatenation
+MATCH (p:Person {name: 'Alice'}) RETURN p
+```
+
+### 4. Write Protection
+- Keep `allow_write_queries` disabled by default
+- Only enable when necessary
+- Review queries before execution
+- Test on non-production databases first
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for comprehensive security documentation including:
+- Query validation mechanisms
+- Write protection details
+- Preflight checks
+- Parameter handling
+- Best practices
+
+## Privacy
+
+This plugin:
+- ✅ Sends queries only to your specified Neo4j instance
+- ✅ Does not store or transmit data to third parties
+- ✅ Credentials are securely stored in Dify
+- ✅ All data remains within your Neo4j infrastructure
 
 ## Contributors
 * Nikola Milosevic

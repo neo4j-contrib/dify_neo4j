@@ -12,32 +12,100 @@ description:
     pt_BR: Plugin to query Neo4j knowledge graph
   llm: Plugin to query Neo4j knowledge graph
 parameters:
+  - name: database
+    type: string
+    required: false
+    label:
+      en_US: Database Name
+      zh_Hans: 数据库名称
+      pt_BR: Nome do Banco de Dados
+    human_description:
+      en_US: Optional Neo4j database name. If not provided, uses the default database for the user.
+      zh_Hans: 可选的Neo4j数据库名称。如果未提供，则使用用户的默认数据库。
+      pt_BR: Nome opcional do banco de dados Neo4j. Se não fornecido, usa o banco de dados padrão do usuário.
+    llm_description: Optional Neo4j database name. If not specified, the query will run against the default database for the authenticated user.
+    form: form
   - name: query
     type: string
     required: true
     label:
-      en_US: Query string
-      zh_Hans: 查询语句
-      pt_BR: Query string
+      en_US: Cypher Query
+      zh_Hans: Cypher查询
+      pt_BR: Consulta Cypher
     human_description:
-      en_US: Cypher query to execute against the Neo4j knowledge graph
-      zh_Hans: 针对Neo4j知识图谱执行的Cypher查询
-      pt_BR: Consulta Cypher para executar no grafo de conhecimento Neo4j
-    llm_description: Cypher query to execute against the Neo4j knowledge graph. Use parameterized queries with $parameter syntax for values.
-    form: llm
+      en_US: |
+        Cypher query to execute. Use parameterized queries for security:
+        Example: MATCH (p:Person {name: $name}) RETURN p
+        Then provide {"name": "Alice"} in the Parameters field below.
+      zh_Hans: |
+        要执行的Cypher查询。使用参数化查询以提高安全性：
+        示例：MATCH (p:Person {name: $name}) RETURN p
+        然后在下面的参数字段中提供 {"name": "Alice"}。
+      pt_BR: |
+        Consulta Cypher para executar. Use consultas parametrizadas para segurança:
+        Exemplo: MATCH (p:Person {name: $name}) RETURN p
+        Em seguida, forneça {"name": "Alice"} no campo Parâmetros abaixo.
+    llm_description: |
+      Cypher query to execute against the Neo4j knowledge graph. 
+      IMPORTANT: Always use parameterized queries with $parameter syntax for dynamic values to prevent injection attacks.
+      Example: MATCH (n:Person {name: $personName, age: $age}) RETURN n
+      Then provide the parameters separately in the 'parameters' field as a JSON object: {"personName": "John", "age": 30}
+    form: form
   - name: parameters
-    type: object
+    type: string
     required: false
     label:
-      en_US: Query Parameters
-      zh_Hans: 查询参数
-      pt_BR: Parâmetros da Consulta
+      en_US: Query Parameters (JSON)
+      zh_Hans: 查询参数 (JSON)
+      pt_BR: Parâmetros da Consulta (JSON)
     human_description:
-      en_US: Optional parameters for the Cypher query
-      zh_Hans: Cypher查询的可选参数
-      pt_BR: Parâmetros opcionais para a consulta Cypher
-    llm_description: Optional parameters to be used with parameterized Cypher queries (e.g., {name: "John", age: 30})
-    form: llm
+      en_US: |
+        JSON string with parameter values for the query above.
+        If query has $name and $age, provide: {"name": "Alice", "age": 30}
+        Leave empty if query has no parameters.
+      zh_Hans: |
+        查询的参数值的JSON字符串。
+        如果查询包含 $name 和 $age，提供：{"name": "Alice", "age": 30}
+        如果查询没有参数，请留空。
+      pt_BR: |
+        String JSON com valores de parâmetros para a consulta acima.
+        Se a consulta tiver $name e $age, forneça: {"name": "Alice", "age": 30}
+        Deixe em branco se a consulta não tiver parâmetros.
+    llm_description: |
+      JSON string containing parameter values for parameterized queries. 
+      Keys must match the parameter names used in the query (without the $ prefix).
+      Example: If query uses $personName and $minAge, provide: {"personName": "John", "minAge": 25}
+      Values can be strings, numbers, booleans, arrays, or nested objects.
+      Leave empty/null if the query doesn't use parameters.
+    form: form
+  - name: max_records
+    type: number
+    required: false
+    label:
+      en_US: Maximum Records
+      zh_Hans: 最大记录数
+      pt_BR: Máximo de Registros
+    human_description:
+      en_US: Maximum number of records to return. Defaults to 1000. This limits memory usage and response size.
+      zh_Hans: 返回的最大记录数。默认为1000。这限制了内存使用和响应大小。
+      pt_BR: Número máximo de registros a retornar. Padrão é 1000. Isso limita o uso de memória e o tamanho da resposta.
+    llm_description: Maximum number of records to fetch from the query result. If not specified, defaults to 1000. Use this to control response size and avoid memory issues with large result sets.
+    form: form
+    default: 1000
+  - name: allow_write_queries
+    type: boolean
+    required: false
+    label:
+      en_US: Allow Write Queries
+      zh_Hans: 允许写入查询
+      pt_BR: Permitir Consultas de Escrita
+    human_description:
+      en_US: ⚠️ WARNING - Enable write operations (CREATE, DELETE, SET, MERGE, etc.). This can modify or delete data in your database. Use with extreme caution!
+      zh_Hans: ⚠️ 警告 - 启用写入操作（CREATE、DELETE、SET、MERGE等）。这可能会修改或删除数据库中的数据。请谨慎使用！
+      pt_BR: ⚠️ AVISO - Ativar operações de escrita (CREATE, DELETE, SET, MERGE, etc.). Isso pode modificar ou excluir dados no banco de dados. Use com extrema cautela!
+    llm_description: When disabled (default), only read queries (MATCH, RETURN) and schema queries are allowed. When enabled, write operations like CREATE, DELETE, SET, MERGE, and REMOVE are permitted. WARNING - Enabling this allows modifications to the database including data deletion. Only enable if you need to modify data and understand the risks.
+    form: form
+    default: false
 extra:
   python:
     source: tools/neo4j_query.py
